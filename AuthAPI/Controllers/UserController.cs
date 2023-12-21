@@ -1,4 +1,5 @@
 ﻿using AuthAPI.Context;
+using AuthAPI.Helpers;
 using AuthAPI.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -43,6 +44,10 @@ namespace AuthAPI.Controllers
             {
                 return BadRequest();
             }
+
+            userObj.Password = PasswordHasher.HashPassword(userObj.Password);
+            userObj.Role = "User";
+            userObj.Token = string.Empty;
 
             await _authContext.Users.AddAsync(userObj);
             await _authContext.SaveChangesAsync();
