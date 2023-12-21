@@ -4,6 +4,8 @@ using AuthAPI.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace AuthAPI.Controllers
 {
@@ -41,9 +43,17 @@ namespace AuthAPI.Controllers
         public async Task<IActionResult> RegisterUser([FromBody] User userObj)
         {
             if (userObj == null)
-            {
                 return BadRequest();
-            }
+
+            if (await CheckUserNameExistsAsync(userObj.Username))
+                return BadRequest(new { Message = "Username already exists!" });
+
+            if (await CheckEmailExistsAsync(userObj.Email))
+                return BadRequest(new { Message = "Email already exists!" });
+
+            var pass = CheckPasswordStrenth(userObj.Password);
+            if (!string.IsNullOrWhiteSpace(pass))
+                return BadRequest(new { Message = pass.ToString() });
 
             userObj.Password = PasswordHasher.HashPassword(userObj.Password);
             userObj.Role = "User";
@@ -56,6 +66,26 @@ namespace AuthAPI.Controllers
             {
                 Message = "User Registered!"
             });
+        }
+
+        private Task<bool> CheckUserNameExistsAsync(string userName)
+            => _authContext.Users.AnyAsync(x => x.Username == userName);
+
+        private Task<bool> CheckEmailExistsAsync(string email)
+            => _authContext.Users.AnyAsync(x => x.Email == email);
+
+        private string CheckPasswordStrenth(string password)
+        {
+            StringBuilder sb = new StringBuilder();
+            if (password.Length < 5)
+                sb.Append("Minimum password length should be 5" + Environment.NewLine);
+            if (!(Regex.IsMatch(password, "[a-z]") && Regex.IsMatch(password, "[A-Z]")
+                && Regex.IsMatch(password, "[0-9]")))
+                sb.Append("Password should be alphanumeric" + Environment.NewLine);
+            if (!Regex.IsMatch(password, "[<,>,@,!,#,$,%,^,&,*,(,),_,+,\\[,\\],{,},?,:,;,|,~,`,-,=]"))
+                sb.Append("Password should contain special characters" + Environment.NewLine);
+
+            return sb.ToString();
         }
     }
 }
