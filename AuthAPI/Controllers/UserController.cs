@@ -1,6 +1,7 @@
 ﻿using AuthAPI.Context;
 using AuthAPI.Helpers;
 using AuthAPI.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -73,6 +74,7 @@ namespace AuthAPI.Controllers
             });
         }
 
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<User>> GetAllUsers()
         {
